@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.8.4/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.8.4/umd/react-dom.production.min.js"></script>
+    <script	src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+    <link rel="stylesheet" href="hooks.css">
+    <title>Hooks</title>
+</head>
+<body>
+    <div id="root"></div>
+	<script	type="text/babel">
+
+const { useState, useEffect } =  React;
+const DEFAULT_PLACEHOLDER_IMAGE = "https://m.media-amazon.com/images/M/MV5BMTczNTI2ODUwOF5BMl5BanBnXkFtZTcwMTU0NTIzMw@@._V1_SX300.jpg";
+const MOVIE_API_URL = "https://www.omdbapi.com/?s=man&apikey=4a3b711b"; 
+
+
+const Header = (props) => {
+  return (
+    <header className="App-header">
+      <h2>{props.text}</h2>
+    </header>
+  );
+};
+
+const Movie = ({ movie }) => {
+  const poster =
+    movie.Poster === "N/A" ? DEFAULT_PLACEHOLDER_IMAGE : movie.Poster;
+  return (
+    <div className="movie">
+      <h2>{movie.Title}</h2>
+      <div>
+        <img
+          width="200"
+          alt={`The movie titled: ${movie.Title}`}
+          src={poster}
+        />
+      </div>
+      <p>({movie.Year})</p>
+    </div>
+  );
+};
+
+const Search = (props) => {
+  const [searchValue, setSearchValue] = useState("");
+  
+  const handleSearchInputChanges = (e) => {
+    setSearchValue(e.target.value);
+  }
+
+  const resetInputField = () => {
+    setSearchValue("")
+  }
+
+  const callSearchFunction = (e) => {
+    e.preventDefault();
+    props.search(searchValue);
+    resetInputField();
+  }
+
+  return (
+      <form className="search">
+        <input
+          value={searchValue}
+          onChange={handleSearchInputChanges}
+          type="text"
+        />
+        <input onClick={callSearchFunction} type="submit" value="SEARCH" />
+      </form>
+    );
+}
+
+const App = () => {
+  const [loading, setLoading] = useState(true);
+  const [movies, setMovies] = useState([]);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+    useEffect(() => {
+    fetch(MOVIE_API_URL)
+      .then(response => response.json())
+      .then(jsonResponse => {
+        setMovies(jsonResponse.Search);
+        setLoading(false);
+      });
+  }, []);
+
+    const search = searchValue => {
+    setLoading(true);
+    setErrorMessage(null);
+
+    fetch(`https://www.omdbapi.com/?s=${searchValue}&apikey=4a3b711b`)
+      .then(response => response.json())
+      .then(jsonResponse => {
+        if (jsonResponse.Response === "True") {
+          setMovies(jsonResponse.Search);
+          setLoading(false);
+        } else {
+          setErrorMessage(jsonResponse.Error);
+          setLoading(false);
+        }
+      });
+  	};
+
+    
+    return (
+     <div className="App">
+      <Header text="HOOKED" />
+      <Search search={search} />
+      <p className="App-intro">Sharing a few of our favourite movies</p>
+      <div className="movies">
+        {loading && !errorMessage ? (
+         <span>loading...</span>
+         ) : errorMessage ? (
+          <div className="errorMessage">{errorMessage}</div>
+        ) : (
+          movies.map((movie, index) => (
+            <Movie key={`${index}-${movie.Title}`} movie={movie} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
+ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
